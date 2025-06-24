@@ -1,0 +1,65 @@
+trainer:
+  resume_path:
+  save_path: checkpoints/test.safetensors
+  checkpoint_path: checkpoints/
+  checkpoint_name: checkpoint
+  checkpoint_epoch: 1        # checkpoint every n epochs
+  checkpoint_step: 500       # 0: don't checkpoint
+  end_step: 100
+  end_epoch: 1
+
+model:
+  module: modules.dped.DPEDModel
+  generator:
+    module: modules.models.generator.DPEDGenerator
+    criterion:
+      module: modules.loss.DPEDLoss
+      args:
+        w_color: 0.1
+        w_texture: 0.4
+        w_content: 1.0
+        w_total_variation: 400.0
+        blur_sigma: 3
+        blur_kernel_size: 21
+    vgg_feature_layer: 35
+  discriminator:
+    module: modules.models.discriminator.DPEDDiscriminator
+    lr_factor: 0.5
+  preprocessor:
+    module: modules.preprocess.DPEDProcessor
+    args:
+      norm_min: 0
+      norm_max: 1
+
+hyperparameters:
+  optimizer:
+    name: torch.optim.AdamW
+    args:
+      lr: 3e-4
+  batch_size: 5
+
+dataset:
+  module: data.h5.H5Dataset
+  args:
+    path: dataset.h5
+    input_label: blackberry
+    target_label: canon
+  
+evaluation:
+  report_train_metrics: true
+  frequency_steps: 10
+  frequency_epochs: 1
+  batch_size: 5
+  metrics:
+    - modules.eval.psnr.PSNREvaluator
+    #- modules.eval.ssim.SSIMEvaluator
+    #- modules.eval.ms-ssim.MSSSIMEvaluator
+  dataset:
+    module: data.patches.DPEDPatchDataset
+    args:
+      path: dataset/test
+      input_label: blackberry
+      target_label: canon
+  use_wandb: false
+  wandb_project: "test"
+  
